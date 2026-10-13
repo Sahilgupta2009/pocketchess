@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Pocket Chess Online</title>
+<style>
+:root{--bg:#0e151c;--panel:#18232e;--panel2:#202f3b;--line:#30424f;--cream:#f0e7d5;--green:#789b70;--gold:#efc66d;--text:#f5f4ef;--muted:#9aadb9}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px system-ui,-apple-system,sans-serif;display:flex;justify-content:center;min-height:100vh}
+main{width:min(100%,560px);padding:20px 15px 30px;display:flex;flex-direction:column;gap:13px}
+header{display:flex;align-items:center;justify-content:space-between}.brand{font-size:11px;letter-spacing:2px;color:#9fb3c0;font-weight:850}.title{font-size:27px;font-weight:850;letter-spacing:-1px}.tag{background:#233542;border:1px solid #3a4d59;border-radius:30px;padding:7px 10px;font-size:11px;color:#d7e3e9}
+.status{display:flex;gap:11px;align-items:center;background:var(--panel);border:1px solid var(--line);padding:12px;border-radius:14px}.dot{width:10px;height:10px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 4px #efc66d1f}.status strong{font-size:14px;display:block}.status small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+#board{width:100%;aspect-ratio:1;display:grid;grid-template-columns:repeat(8,1fr);border:4px solid #293b47;border-radius:7px;overflow:hidden;box-shadow:0 12px 30px #0005;touch-action:manipulation}
+.sq{border:0;padding:0;display:flex;align-items:center;justify-content:center;position:relative;font-size:clamp(27px,8.4vw,47px);line-height:1;cursor:pointer;color:#101820}.light{background:#eee3cf}.dark{background:#78976f}.sq.selected{box-shadow:inset 0 0 0 4px #f3c960}.sq.last{background:#c4c86c}.sq.hint:after{content:"";width:24%;height:24%;border-radius:50%;background:#223d2e77;position:absolute}.sq.capture:after{content:"";position:absolute;inset:3px;border:4px solid #b15d4e;border-radius:50%}.piece{z-index:1;filter:drop-shadow(0 1px 1px #0002)}.blackPiece{color:#20272a;text-shadow:0 1px 0 #fff8}.whitePiece{color:#fffdf4;text-shadow:0 2px 1px #263126,0 0 2px #263126}.coord{position:absolute;left:3px;top:2px;font-size:9px;opacity:.75}
+.controls{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.btn{border:1px solid #3b4e5b;background:var(--panel);color:var(--text);padding:11px 7px;border-radius:11px;font-size:12px;font-weight:750}.primary{background:var(--gold);color:#18232b;border-color:var(--gold)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:12px}.head{display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:850;letter-spacing:.4px}.muted{font-size:11px;color:var(--muted);font-weight:500;letter-spacing:0}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1}.smallbtn{background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:#e9eff1;padding:8px;font-size:12px}.field{background:#101a22;color:#f5f4ef;border:1px solid #3b4d59;border-radius:8px;padding:9px;width:100%;min-width:0;font-size:12px}.field::placeholder{color:#718692}.section{display:flex;flex-direction:column;gap:9px;margin-top:10px}.moves{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;max-height:80px;overflow:auto}.move{background:#253744;padding:5px 7px;border-radius:6px;font-size:11px}.timerrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}.clock{padding:9px;border-radius:9px;background:#101a22;border:1px solid #2f414e}.clock.active{border-color:var(--gold)}.clock span{font-size:10px;color:var(--muted);display:block}.clock strong{font-size:20px;font-variant-numeric:tabular-nums}.note{font-size:10px;line-height:1.5;color:#7f939f;text-align:center}
+</style></head><body><main>
+<header><div><div class="brand">POCKET CHESS / 02</div><div class="title">Play beautifully.</div></div><div class="tag">♟ MODERN EDITION</div></header>
+<div class="status"><div class="dot" id="dot"></div><div style="flex:1"><strong id="status">White to move</strong><small id="substatus">Local board ready · tap a piece</small></div><span class="tag" id="turnTag">WHITE</span></div>
+<div id="board" aria-label="Chess board"></div>
+<div class="timerrow"><div class="clock active" id="whiteClock"><span>WHITE CLOCK</span><strong id="wt">10:00</strong></div><div class="clock" id="blackClock"><span>BLACK CLOCK</span><strong id="bt">10:00</strong></div></div>
+<div class="controls"><button class="btn" id="undo">↶ Undo</button><button class="btn primary" id="new">＋ New game</button><button class="btn" id="sound">♫ Sound: on</button></div>
+<div class="card"><div class="head"><span>GAME SETTINGS</span><span class="muted">LOCAL CONFIG</span></div><div class="section">
+<div class="row"><select class="field" id="difficulty"><option value="easy">AI level · Easy</option><option value="medium">AI level · Medium</option><option value="hard">AI level · Hard</option></select><select class="field" id="minutes"><option value="3">3 min</option><option value="5">5 min</option><option value="10" selected>10 min</option><option value="15">15 min</option><option value="30">30 min</option></select></div>
+<div class="row"><button class="smallbtn" id="ai">Play vs AI: off</button><button class="smallbtn" id="flip">Flip board</button><button class="smallbtn" id="resign">Resign</button></div>
+</div></div>
+<div class="card"><div class="head"><span>MOVE HISTORY</span><span class="muted" id="count">0 plies</span></div><div class="moves" id="moves"><span class="muted">Moves will appear here.</span></div><div class="section"><div class="row"><button class="smallbtn" id="export">Export PGN</button><button class="smallbtn" id="import">Import PGN</button></div><textarea class="field" id="pgn" rows="3" placeholder="PGN export appears here. Paste a PGN here to import moves."></textarea></div></div>
+<div class="card"><div class="head"><span>ONLINE MULTIPLAYER</span><span class="muted">SERVER REQUIRED</span></div><div class="section"><p class="muted" style="line-height:1.5;margin:0">Create or join a room using a WebSocket server URL. The client sends room and move messages, but an authoritative server must validate moves and synchronize both players.</p><input class="field" id="server" placeholder="wss://your-chess-server.example/ws"><div class="row"><input class="field" id="room" placeholder="Room code"><button class="smallbtn" id="connect">Connect</button></div><div class="muted" id="netstatus">Not connected · offline mode works</div></div></div>
+<div class="note">Offline local chess · full standard move rules · timed games · PGN import/export<br>Online play requires a compatible WebSocket server; do not enter credentials in an untrusted server.</div>
+</main>
+<script>
+const GL={K:'♔',Q:'♕',R:'♖',B:'♗',N:'♘',P:'♙',k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};
+const initial=()=>[
+' rnbqkbnr'.trim().split(''),'pppppppp'.split(''),Array(8).fill(null),Array(8).fill(null),
+Array(8).fill(null),Array(8).fill(null),'PPPPPPPP'.split(''),'RNBQKBNR'.split('')
+];
+let B,side,sel,targets,last,states,moves,rights,ep,half,full,over,flipped,vsAI,soundOn,ws,roomCode;
+let clocks={w:600,b:600},clockBase=Date.now(),clockRun=true;
+function cp(x){return JSON.parse(JSON.stringify(x))}
+function col(p){return p===p.toUpperCase()?'w':'b'}function opp(s){return s==='w'?'b':'w'}function inside(r,c){return r>=0&&r<8&&c>=0&&c<8}
+function pos(r,c){return String.fromCharCode(97+c)+(8-r)}function parsePos(s){return[8-parseInt(s[1]),s.charCodeAt(0)-97]}
+function findKing(s){for(let r=0;r<8;r++)for(let c=0;c<8;c++)if(B[r][c]===(s==='w'?'K':'k'))return[r,c];return null}
+function attacked(r,c,by){
+ for(let y=0;y<8;y++)for(let x=0;x<8;x++){let p=B[y][x];if(!p||col(p)!==by)continue;let t=p.toUpperCase(),dr=r-y,dc=c-x;
+ if(t==='P'&&dr===(by==='w'?-1:1)&&Math.abs(dc)===1)return true;
+ if(t==='N'&&((Math.abs(dr)===2&&Math.abs(dc)===1)||(Math.abs(dr)===1&&Math.abs(dc)===2)))return true;
+ if(t==='K'&&Math.max(Math.abs(dr),Math.abs(dc))===1)return true;
+ if('BRQ'.includes(t)){let diagonal=Math.abs(dr)===Math.abs(dc)&&dr!==0,straight=(dr===0)!==(dc===0);if((t==='B'&&!diagonal)||(t==='R'&&!straight)||(t==='Q'&&!(diagonal||straight)))continue;
+ let sr=Math.sign(dr),sc=Math.sign(dc),y2=y+sr,x2=x+sc,clear=true;while(y2!==r||x2!==c){if(B[y2][x2]){clear=false;break}y2+=sr;x2+=sc}if(clear)return true}
+ }return false
+}
+function inCheck(s){let k=findKing(s);return !k||attacked(k[0],k[1],opp(s))}
+function pseudo(r,c){
+ let p=B[r][c],out=[];if(!p)return out;let s=col(p),t=p.toUpperCase();
+ const put=(rr,cc)=>{if(!inside(rr,cc))return false;let q=B[rr][cc];if(q&&col(q)===s)return false;out.push([rr,cc]);return !q};
+ if(t==='P'){
+  let d=s==='w'?-1:1,start=s==='w'?6:1;
+  if(inside(r+d,c)&&!B[r+d][c]){out.push([r+d,c]);if(r===start&&!B[r+2*d][c])out.push([r+2*d,c])}
+  for(let dc of [-1,1])if(inside(r+d,c+dc)){let q=B[r+d][c+dc];if(q&&col(q)!==s)out.push([r+d,c+dc]);else if(ep&&ep[0]===r+d&&ep[1]===c+dc)out.push([r+d,c+dc])}
+ } else if(t==='N'){for(let [dr,dc] of [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]])put(r+dr,c+dc)}
+ else if(t==='K'){
+  for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++)if(dr||dc)put(r+dr,c+dc);
+  if(s==='w'&&r===7&&c===4&&!inCheck('w')){
+   if(rights.K&&B[7][5]===null&&B[7][6]===null&&B[7][7]==='R'&&!attacked(7,5,'b')&&!attacked(7,6,'b'))out.push([7,6]);
+   if(rights.Q&&B[7][1]===null&&B[7][2]===null&&B[7][3]===null&&B[7][0]==='R'&&!attacked(7,3,'b')&&!attacked(7,2,'b'))out.push([7,2])
+  }
+  if(s==='b'&&r===0&&c===4&&!inCheck('b')){
+   if(rights.k&&B[0][5]===null&&B[0][6]===null&&B[0][7]==='r'&&!attacked(0,5,'w')&&!attacked(0,6,'w'))out.push([0,6]);
+   if(rights.q&&B[0][1]===null&&B[0][2]===null&&B[0][3]===null&&B[0][0]==='r'&&!attacked(0,3,'w')&&!attacked(0,2,'w'))out.push([0,2])
+  }
+ }else{
+  let dirs=[];if(t==='B'||t==='Q')dirs.push([-1,-1],[-1,1],[1,-1],[1,1]);if(t==='R'||t==='Q')dirs.push([-1,0],[1,0],[0,-1],[0,1]);
+  for(let [dr,dc] of dirs){let y=r+dr,x=c+dc;while(inside(y,x)){if(!put(y,x))break;y+=dr;x+=dc}}
+ }
+ return out
+}
+function applyRaw(from,to,promo='Q'){
+ let [r,c]=from,[rr,cc]=to,p=B[r][c],q=B[rr][cc],s=col(p),t=p.toUpperCase();
+ if(t==='P'&&ep&&rr===ep[0]&&cc===ep[1]&&!q)B[rr+(s==='w'?1:-1)][cc]=null;
+ if(t==='K'&&Math.abs(cc-c)===2){if(cc===6){B[rr][5]=B[rr][7];B[rr][7]=null}else{B[rr][3]=B[rr][0];B[rr][0]=null}}
+ if(p==='K')rights.K=rights.Q=false;if(p==='k')rights.k=rights.q=false;
+ if(p==='R'&&r===7&&c===0)rights.Q=false;if(p==='R'&&r===7&&c===7)rights.K=false;
+ if(p==='r'&&r===0&&c===0)rights.q=false;if(p==='r'&&r===0&&c===7)rights.k=false;
+ if(q==='R'&&rr===7&&cc===0)rights.Q=false;if(q==='R'&&rr===7&&cc===7)rights.K=false;
+ if(q==='r'&&rr===0&&cc===0)rights.q=false;if(q==='r'&&rr===0&&cc===7)rights.k=false;
+ ep=null;if(t==='P'&&Math.abs(rr-r)===2)ep=[(rr+r)/2,c];
+ B[rr][cc]=p;B[r][c]=null;if(t==='P'&&(rr===0||rr===7))B[rr][cc]=s==='w'?promo.toUpperCase():promo.toLowerCase();
+ half=(t==='P'||q|| (t==='P'&&ep))?0:half+1;if(s==='b')full++;
+ return {p,q,from,to,promo: t==='P'&&(rr===0||rr===7)?promo:null,epCapture:t==='P'&&from[1]!==to[1]&&!q}
+}
+function legalFrom(r,c){let p=B[r][c];if(!p)return[];let s=col(p);return pseudo(r,c).filter(to=>{let snapshot=cp({B,rights,ep,half,full});applyRaw([r,c],to,'Q');let ok=!inCheck(s);({B,rights,ep,half,full}=snapshot);return ok})}
+function legalAll(s){let a=[];for(let r=0;r<8;r++)for(let c=0;c<8;c++)if(B[r][c]&&col(B[r][c])===s)for(let to of legalFrom(r,c))a.push({from:[r,c],to});return a}
+function fen(){
+ let rows=B.map(row=>{let s='',n=0;for(let p of row){if(!p)n++;else{if(n)s+=n,n=0;s+=p}}if(n)s+=n;return s}).join('/');
+ return rows+' '+side+' '+(rights.K?'K':'')+(rights.Q?'Q':'')+(rights.k?'k':'')+(rights.q?'q':'')||'-'+' '+(ep?pos(...ep):'-')+' '+half+' '+full
+}
+function snapshot(){return {B:cp(B),side,rights:cp(rights),ep:cp(ep),half,full,last:cp(last),over,clocks:cp(clocks),clockRun}}
+function restore(s){B=s.B;side=s.side;rights=s.rights;ep=s.ep;half=s.half;full=s.full;last=s.last;over=s.over;clocks=s.clocks;clockRun=s.clockRun;sel=null;targets=[]}
+function san(from,to,meta,checkAfter,mate){let p=meta.p,t=p.toUpperCase(),capture=!!meta.q||meta.epCapture,s='';if(t==='K'&&Math.abs(to[1]-from[1])===2)s=to[1]===6?'O-O':'O-O-O';else{s+=(t==='P'?(capture?String.fromCharCode(97+from[1]):''):t);if(capture)s+='x';s+=pos(...to);if(meta.promo)s+='='+meta.promo}if(mate)s+='#';else if(checkAfter)s+='+';return s}
+function play(from,to,promo='Q',fromNet=false){
+ if(over)return;let before=snapshot(),oldSide=side,meta=applyRaw(from,to,promo);side=opp(side);
+ let chk=inCheck(side),all=legalAll(side),mate=chk&&all.length===0,stalemate=!chk&&all.length===0;
+ let notation=san(from,to,meta,chk,mate);moves.push({before,from,to,meta,san:notation,fen:fen()});states.push(fen());last=[from,to];sel=null;targets=[];if(mate||stalemate){over=true;clockRun=false;setStatus(mate?(oldSide==='w'?'Checkmate — White wins':'Checkmate — Black wins'):'Draw — stalemate','Game over');}
+ else if(half>=100){over=true;clockRun=false;setStatus('Draw by 50-move rule','Game over')}
+ else if(chk)setStatus((side==='w'?'White':'Black')+' to move','Check! Your king is attacked');
+ else setStatus((side==='w'?'White':'Black')+' to move','Select a piece to move');
+ if(soundOn)beep();render();if(ws&&ws.readyState===1&&!fromNet)ws.send(JSON.stringify({type:'move',room:roomCode,from:pos(...from),to:pos(...to),promotion:promo,fen:fen()}));
+ if(vsAI&&side==='b'&&!over)setTimeout(aiMove,220)
+}
+function aiMove(){
+ if(over||side!=='b')return;let opts=legalAll('b');if(!opts.length)return;let level=document.getElementById('difficulty').value;
+ function score(m){let p=B[m.from[0]][m.from[1]],q=B[m.to[0]][m.to[1]],v={P:100,N:320,B:330,R:500,Q:900,K:20000};let val=(q?v[q.toUpperCase()]*1.1:0)+Math.random()*(level==='easy'?500:level==='medium'?90:15);
+ let center=3.5-Math.abs(3.5-m.to[0])+3.5-Math.abs(3.5-m.to[1]);return val+center*(p.toUpperCase()==='N'||p.toUpperCase()==='B'?4:1)}
+ opts.sort((a,b)=>score(b)-score(a));let pick=opts[0];
+ if(level==='hard'){let good=opts.slice(0,Math.min(5,opts.length));pick=good[Math.floor(Math.random()*good.length)]}
+ play(pick.from,pick.to,'Q')
+}
+function setStatus(a,b){document.getElementById('status').textContent=a;document.getElementById('substatus').textContent=b;document.getElementById('dot').style.background=a.toLowerCase().includes('check')?'#e87c70':'#efc66d';document.getElementById('turnTag').textContent=side==='w'?'WHITE':'BLACK'}
+function render(){
+ let el=document.getElementById('board');el.innerHTML='';
+ for(let vr=0;vr<8;vr++)for(let vc=0;vc<8;vc++){let r=flipped?7-vr:vr,c=flipped?7-vc:vc,b=document.createElement('button');b.className='sq '+((r+c)%2?'dark':'light');
+ if(last&&((last[0][0]===r&&last[0][1]===c)||(last[1][0]===r&&last[1][1]===c)))b.classList.add('last');
+ if(sel&&sel[0]===r&&sel[1]===c)b.classList.add('selected');if(targets.some(([x,y])=>x===r&&y===c))b.classList.add(B[r][c]?'capture':'hint');
+ if(vc===0){let co=document.createElement('span');co.className='coord';co.textContent=8-r;b.appendChild(co)}
+ if(B[r][c]){let sp=document.createElement('span');sp.className='piece '+(col(B[r][c])==='w'?'whitePiece':'blackPiece');sp.textContent=GL[B[r][c]];b.appendChild(sp)}
+ b.onclick=()=>tap(r,c);el.appendChild(b)}
+ renderMoves();document.getElementById('whiteClock').classList.toggle('active',side==='w'&&!over);document.getElementById('blackClock').classList.toggle('active',side==='b'&&!over);updateClocks()
+}
+function tap(r,c){if(over)return;if(ws&&side!=='w'){}if(sel&&targets.some(([a,b])=>a===r&&b===c)){play(sel,[r,c]);return}let p=B[r][c];if(p&&col(p)===side&&(!vsAI||side==='w')){sel=[r,c];targets=legalFrom(r,c);render();return}sel=null;targets=[];render()}
+function renderMoves(){let e=document.getElementById('moves');e.innerHTML='';if(!moves.length)e.innerHTML='<span class="muted">Moves will appear here.</span>';moves.forEach((m,i)=>{if(i%2===0){let n=document.createElement('span');n.className='move';n.textContent=(i/2+1)+'.';e.appendChild(n)}let n=document.createElement('span');n.className='move';n.textContent=m.san;e.appendChild(n)});document.getElementById('count').textContent=moves.length+' plies'}
+function fresh(){B=initial();side='w';sel=null;targets=[];last=null;states=[];moves=[];rights={K:true,Q:true,k:true,q:true};ep=null;half=0;full=1;over=false;let m=+(document.getElementById('minutes')?.value||10)*60;clocks={w:m,b:m};clockBase=Date.now();clockRun=true;setStatus('White to move','Standard chess · select a piece');render()}
+function updateClocks(){let now=Date.now();if(clockRun&&!over){let elapsed=(now-clockBase)/1000;clocks[side]=Math.max(0,clocks[side]-elapsed);clockBase=now;if(clocks[side]===0){over=true;clockRun=false;setStatus('Time — '+(side==='w'?'Black':'White')+' wins','Flag fall');}}document.getElementById('wt').textContent=fmt(clocks.w);document.getElementById('bt').textContent=fmt(clocks.b)}
+function fmt(n){n=Math.ceil(n);return Math.floor(n/60)+':'+String(n%60).padStart(2,'0')}
+setInterval(updateClocks,250)
+let audioCtx;function beep(){try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=620;g.gain.value=.035;o.start();o.stop(audioCtx.currentTime+.06)}catch(e){}}
+function exportPGN(){let d=new Date(),date=d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0');let out='[Event "Pocket Chess"]\\n[Site "Local"]\\n[Date "'+date+'"]\\n[Round "-"]\\n[White "White"]\\n[Black "'+(vsAI?'Pocket AI':'Black')+'"]\\n[Result "'+(over?'1-0':'*')+'"]\\n\\n';moves.forEach((m,i)=>{if(i%2===0)out+=(Math.floor(i/2)+1)+'. ';out+=m.san+' '});out+=over?' '+(moves.length?'1-0':'*'):'*';document.getElementById('pgn').value=out}
+function importPGN(){let raw=document.getElementById('pgn').value;let toks=raw.replace(/\\[[^\\]]*\\]/g,' ').replace(/\\{[^}]*\\}/g,' ').replace(/\\([^)]*\\)/g,' ').split(/\\s+/).filter(x=>x&&!/^\\d+\\.{1,3}$/.test(x)&&!/^\\$\\d+$/.test(x)&&!['1-0','0-1','1/2-1/2','*'].includes(x));fresh();for(let token of toks){token=token.replace(/[!?+#]+$/,'').replace(/[+#]+$/,'');if(token==='O-O'||token==='O-O-O'){let k=findKing(side);if(!k)break;let to=[k[0],token==='O-O'?6:2];if(legalFrom(...k).some(x=>x[0]===to[0]&&x[1]===to[1]))play(k,to);else break;continue}
+ let dest=token.match(/[a-h][1-8]/);if(!dest)continue;let to=parsePos(dest[0]),promo=(token.match(/=([QRBN])/i)||[])[1]||'Q',capture=token.includes('x'),piece=(token.match(/^[KQRBN]/)||[])[0]||'P',files=token.match(/^[KQRBN]?([a-h])(?=[1-8]?x?[a-h][1-8])/),rank=token.match(/^[KQRBN]?[a-h]?([1-8])(?=x?[a-h][1-8])/);let cand=legalAll(side).filter(m=>m.to[0]===to[0]&&m.to[1]===to[1]&&B[m.from[0]][m.from[1]].toUpperCase()===piece&&(!files||m.from[1]===files[1].charCodeAt(0)-97)&&(!rank||m.from[0]===8-Number(rank[1])));if(cand.length!==1)break;play(cand[0].from,to,promo)}
+}
+document.getElementById('new').onclick=()=>{if(confirm('Start a new game?'))fresh()};
+document.getElementById('undo').onclick=()=>{if(!moves.length)return;let m=moves.pop();restore(m.before);states.pop();clockBase=Date.now();render();setStatus(side==='w'?'White to move':'Black to move','Last move undone')};
+document.getElementById('sound').onclick=e=>{soundOn=!soundOn;e.target.textContent='♫ Sound: '+(soundOn?'on':'off')};
+document.getElementById('ai').onclick=e=>{vsAI=!vsAI;e.target.textContent='Play vs AI: '+(vsAI?'on':'off');if(vsAI&&side==='b'&&!over)aiMove()};
+document.getElementById('flip').onclick=()=>{flipped=!flipped;render()};
+document.getElementById('resign').onclick=()=>{if(!over&&confirm('Resign this game?')){over=true;clockRun=false;setStatus((side==='w'?'Black':'White')+' wins by resignation','Game over')}};
+document.getElementById('minutes').onchange=()=>{if(!moves.length)fresh()};
+document.getElementById('export').onclick=exportPGN;document.getElementById('import').onclick=()=>{try{importPGN()}catch(e){alert('Could not import this PGN. Check the notation.')}};
+document.getElementById('connect').onclick=()=>{
+ let url=document.getElementById('server').value.trim(),room=document.getElementById('room').value.trim();
+ if(!url||!room){document.getElementById('netstatus').textContent='Enter a secure WebSocket URL and room code.';return}
+ try{if(ws)ws.close();ws=new WebSocket(url);roomCode=room;ws.onopen=()=>{document.getElementById('netstatus').textContent='Connected · joining '+room;ws.send(JSON.stringify({type:'join',room,fen:fen()}))};ws.onmessage=e=>{try{let m=JSON.parse(e.data);if(m.type==='move'&&m.from&&m.to){let f=parsePos(m.from),t=parsePos(m.to);if(legalFrom(...f).some(x=>x[0]===t[0]&&x[1]===t[1]))play(f,t,m.promotion||'Q',true)}else if(m.type==='error')document.getElementById('netstatus').textContent=m.message||'Server error'}catch(err){}};ws.onclose=()=>document.getElementById('netstatus').textContent='Disconnected';ws.onerror=()=>document.getElementById('netstatus').textContent='Connection error · check server URL'}catch(e){document.getElementById('netstatus').textContent='Invalid WebSocket URL'}
+};
+fresh();
+</script></body></html>
